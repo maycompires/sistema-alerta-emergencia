@@ -1,11 +1,10 @@
 'use client';
 
-import { Fragment } from 'react';
-import { Disclosure, Menu, Transition } from '@headlessui/react';
+import { Fragment, useEffect, useState } from 'react';
+import { Disclosure, Menu } from '@headlessui/react';
 import { Bars3Icon as Bars3IconOutline, XMarkIcon as XMarkIconOutline } from '@heroicons/react/24/outline';
 import { useSession, signOut } from 'next-auth/react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface NavItem {
   name: string;
@@ -17,8 +16,14 @@ function classNames(...classes: string[]) {
 }
 
 export default function Navbar() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navigation: NavItem[] = [
     { name: 'Início', href: '/' },
@@ -26,6 +31,10 @@ export default function Navbar() {
     { name: 'Recursos', href: '/resources' },
     ...(session?.user?.role === 'ADMIN' ? [{ name: 'Admin', href: '/admin' }] : []),
   ];
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <Disclosure as="nav" className="bg-white shadow">
@@ -35,15 +44,18 @@ export default function Navbar() {
             <div className="flex h-16 justify-between">
               <div className="flex">
                 <div className="flex flex-shrink-0 items-center">
-                  <a href="/" className="text-xl font-bold text-blue-600">
+                  <button
+                    onClick={() => router.push('/')}
+                    className="text-xl font-bold text-blue-600"
+                  >
                     AlertaEmergência
-                  </a>
+                  </button>
                 </div>
                 <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                   {navigation.map((item) => (
-                    <a
+                    <button
                       key={item.name}
-                      href={item.href}
+                      onClick={() => router.push(item.href)}
                       className={classNames(
                         pathname === item.href
                           ? 'border-blue-500 text-gray-900'
@@ -52,12 +64,12 @@ export default function Navbar() {
                       )}
                     >
                       {item.name}
-                    </a>
+                    </button>
                   ))}
                 </div>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:items-center">
-                {session ? (
+                {status === 'authenticated' ? (
                   <Menu as="div" className="relative ml-3">
                     <div>
                       <Menu.Button className="flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
@@ -72,15 +84,15 @@ export default function Navbar() {
                     <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                       <Menu.Item>
                         {({ active }) => (
-                          <a
-                            href="/profile"
+                          <button
+                            onClick={() => router.push('/profile')}
                             className={classNames(
                               active ? 'bg-gray-100' : '',
-                              'block px-4 py-2 text-sm text-gray-700'
+                              'block w-full text-left px-4 py-2 text-sm text-gray-700'
                             )}
                           >
                             Perfil
-                          </a>
+                          </button>
                         )}
                       </Menu.Item>
                       <Menu.Item>
@@ -100,18 +112,18 @@ export default function Navbar() {
                   </Menu>
                 ) : (
                   <div className="space-x-4">
-                    <a
-                      href="/auth/login"
+                    <button
+                      onClick={() => router.push('/auth/login')}
                       className="text-gray-500 hover:text-gray-700"
                     >
                       Entrar
-                    </a>
-                    <a
-                      href="/auth/register"
+                    </button>
+                    <button
+                      onClick={() => router.push('/auth/register')}
                       className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
                     >
                       Registrar
-                    </a>
+                    </button>
                   </div>
                 )}
               </div>
@@ -133,71 +145,56 @@ export default function Navbar() {
               {navigation.map((item) => (
                 <Disclosure.Button
                   key={item.name}
-                  as="a"
-                  href={item.href}
+                  as="button"
+                  onClick={() => router.push(item.href)}
                   className={classNames(
                     pathname === item.href
                       ? 'bg-blue-50 border-blue-500 text-blue-700'
                       : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700',
-                    'block border-l-4 py-2 pl-3 pr-4 text-base font-medium'
+                    'block pl-3 pr-4 py-2 border-l-4 text-base font-medium w-full text-left'
                   )}
                 >
                   {item.name}
                 </Disclosure.Button>
               ))}
             </div>
-            {session ? (
+            {status === 'authenticated' ? (
               <div className="border-t border-gray-200 pb-3 pt-4">
-                <div className="flex items-center px-4">
-                  <div className="flex-shrink-0">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-blue-600 font-medium">
-                        {session.user?.name?.[0]?.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="ml-3">
-                    <div className="text-base font-medium text-gray-800">
-                      {session.user?.name}
-                    </div>
-                    <div className="text-sm font-medium text-gray-500">
-                      {session.user?.email}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 space-y-1">
+                <div className="space-y-1">
                   <Disclosure.Button
-                    as="a"
-                    href="/profile"
-                    className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                    as="button"
+                    onClick={() => router.push('/profile')}
+                    className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 w-full text-left"
                   >
-                    Seu Perfil
+                    Perfil
                   </Disclosure.Button>
                   <Disclosure.Button
                     as="button"
                     onClick={() => signOut()}
-                    className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                    className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 w-full text-left"
                   >
                     Sair
                   </Disclosure.Button>
                 </div>
               </div>
             ) : (
-              <div className="border-t border-gray-200 pb-3 pt-4 space-y-1">
-                <Disclosure.Button
-                  as="a"
-                  href="/auth/login"
-                  className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                >
-                  Entrar
-                </Disclosure.Button>
-                <Disclosure.Button
-                  as="a"
-                  href="/auth/register"
-                  className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                >
-                  Cadastrar
-                </Disclosure.Button>
+              <div className="border-t border-gray-200 pb-3 pt-4">
+                <div className="space-y-1">
+                  <Disclosure.Button
+                    as="button"
+                    onClick={() => router.push('/auth/login')}
+                    className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 w-full text-left"
+                  >
+                    Entrar
+                  </Disclosure.Button>
+                  <Disclosure.Button
+                    as="button"
+                    onClick={() => router.push('/auth/register')}
+                    className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 w-full text-left"
+                  >
+                    Registrar
+                  </Disclosure.Button>
+                </div>
               </div>
             )}
           </Disclosure.Panel>

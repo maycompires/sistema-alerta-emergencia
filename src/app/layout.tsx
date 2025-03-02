@@ -17,13 +17,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body className={inter.className}>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
-          <Navbar />
-          <main className="min-h-screen bg-gray-100">
-            {children}
-          </main>
+          <div className="min-h-screen bg-gray-100">
+            <Navbar />
+            <main>
+              {children}
+            </main>
+          </div>
         </AuthProvider>
       </body>
     </html>
