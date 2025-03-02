@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  role          Role      @default(CITIZEN)
+  phone         String?
+  alerts        Alert[]   @relation("CreatedAlerts")
+  responses     Response[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Alert {
+  id          String    @id @default(cuid())
+  type        AlertType
+  status      AlertStatus @default(ACTIVE)
+  description String
+  location    String
+  latitude    Float
+  longitude   Float
+  creator     User      @relation("CreatedAlerts", fields: [creatorId], references: [id])
+  creatorId   String
+  responses   Response[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Response {
+  id          String    @id @default(cuid())
+  alert       Alert     @relation(fields: [alertId], references: [id])
+  alertId     String
+  responder   User      @relation(fields: [responderId], references: [id])
+  responderId String
+  status      ResponseStatus
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum Role {
+  ADMIN
+  AUTHORITY
+  EMERGENCY_SERVICE
+  CITIZEN
+}
+
+enum AlertType {
+  FIRE
+  MEDICAL
+  POLICE
+  NATURAL_DISASTER
+  ACCIDENT
+  VIOLENCE
+  OTHER
+}
+
+enum AlertStatus {
+  ACTIVE
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
+}
+
+enum ResponseStatus {
+  ACKNOWLEDGED
+  EN_ROUTE
+  ON_SITE
+  COMPLETED
+  CANCELLED
+}
